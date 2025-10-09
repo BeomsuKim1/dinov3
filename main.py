@@ -1,21 +1,6 @@
-import os
-from huggingface_hub import login
-from transformers import pipeline
-from transformers.image_utils import load_image
+import torch
 
-os.environ["HF_HOME"] = "/home/beomsu/ssd/huggingface_cache"
+REPO_DIR = "/home/beomsu/dinov3/dinov3"
 
-with open(os.path.expanduser("token.txt")) as f:
-    token = f.read().strip()
-
-url = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/pipeline-cat-chonk.jpeg"
-image = load_image(url)
-
-login(token=token)
-
-feature_extractor = pipeline(
-    model="facebook/dinov3-vit7b16-pretrain-lvd1689m",
-    task="image-feature-extraction", 
-    device=-1  # Use CPU; change to 0 for GPU if available
-)
-features = feature_extractor(image)
+dinov3_vith16plus = torch.hub.load(REPO_DIR, 'dinov3_vith16plus', source='local', weights=<CHECKPOINT/URL/OR/PATH>)
+dinov3_vit7b16 = torch.hub.load(REPO_DIR, 'dinov3_vit7b16', source='local', weights=<CHECKPOINT/URL/OR/PATH>)
