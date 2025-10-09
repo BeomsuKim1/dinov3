@@ -16,6 +16,6 @@ login(token=token)
 feature_extractor = pipeline(
     model="facebook/dinov3-vit7b16-pretrain-lvd1689m",
     task="image-feature-extraction", 
-    device=0  # Use GPU if available
+    device=-1  # Use CPU; change to 0 for GPU if available
 )
 features = feature_extractor(image)
