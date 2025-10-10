@@ -14,14 +14,18 @@ path = "/home/beomsu/Downloads/iStock-1052880600.jpg"
 image = load_image(path)
 print("Image size:", image.height, image.width)
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print("Device:", device)
+
 processor = AutoImageProcessor.from_pretrained("facebook/dinov3-vith16plus-pretrain-lvd1689m")
-model = AutoModel.from_pretrained("facebook/dinov3-vith16plus-pretrain-lvd1689m")
+model = AutoModel.from_pretrained("facebook/dinov3-vith16plus-pretrain-lvd1689m").to(device)
 patch_size = model.config.patch_size
 print("Patch size:", patch_size)
 print("Num register tokens:", model.config.num_register_tokens)
 
 inputs = processor(images=image, 
                    return_tensors="pt", 
+                   device=device, 
                    do_resize=False, 
                    do_center_crop=False)
 print("Preprocessed image size:", inputs.pixel_values.shape)
