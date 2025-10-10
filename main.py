@@ -21,11 +21,12 @@ plt.figure()
 plt.imshow(image)
 plt.axis('off')
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda" # cpu or cuda
 print("Device:", device)
 
-processor = AutoImageProcessor.from_pretrained("facebook/dinov3-vith16plus-pretrain-lvd1689m")
-model = AutoModel.from_pretrained("facebook/dinov3-vith16plus-pretrain-lvd1689m").to(device)
+MODEL_DINOV3 = "facebook/dinov3-vith16plus-pretrain-lvd1689m"
+processor = AutoImageProcessor.from_pretrained(MODEL_DINOV3)
+model = AutoModel.from_pretrained(MODEL_DINOV3).to(device)
 patch_size = model.config.patch_size
 print("Patch size:", patch_size)
 print("Num register tokens:", model.config.num_register_tokens)
@@ -71,8 +72,43 @@ print("X_pca.shape:", X_pca.shape)
 projected_image = 1 / (1 + np.exp(-2 * X_pca))
 
 for i in range(B):
-    plt.figure()
-    plt.imshow(projected_image[i])
-    plt.axis('off')
+  plt.figure()
+  plt.imshow(projected_image[i])
+  plt.axis('off')
+
+eps = 1e-12
+row_norms = np.linalg.norm(X, axis=1, keepdims=True)
+row_norms = np.maximum(row_norms, eps)
+Xn = X / row_norms
+
+D = np.zeros((H, W), dtype=np.float32)
+
+fig, ax = plt.subplots()
+im = ax.imshow(D, cmap="viridis_r", origin="upper", interpolation="nearest", vmin=0.0, vmax=2.0)
+marker, = ax.plot([], [], "r+", markersize=20, markeredgewidth=4)  # click marker
+plt.tight_layout()
+plt.axis('off')
+
+def on_click(event):
+    if event.inaxes is not ax or event.xdata is None or event.ydata is None:
+        return
+    j = int(round(event.xdata))
+    i = int(round(event.ydata))
+    i = max(0, min(H-1, i))
+    j = max(0, min(W-1, j))
+    idx = i * W + j
+
+    x0 = Xn[idx]
+
+    sim = Xn @ x0
+    dist = 1.0 - sim
+    D = dist.reshape(H, W)
+
+    im.set_data(D)
+    im.set_clim(0.0, 2.0)
+    marker.set_data([j], [i])
+    fig.canvas.draw_idle()
+
+cid = fig.canvas.mpl_connect("button_press_event", on_click)
 
 plt.show()
