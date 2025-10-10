@@ -1,11 +1,11 @@
 import os
 import torch
-import cupy as cp
 import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.decomposition import PCA
 from huggingface_hub import login
 from transformers import AutoImageProcessor, AutoModel
 from transformers.image_utils import load_image
-from cuml.decomposition import PCA
 
 os.environ["HF_HOME"] = "/home/beomsu/ssd/huggingface_cache"
 
@@ -57,7 +57,7 @@ print("patch_features.shape:", patch_features.shape)
 B, H, W, C = patch_features.shape
 N = H * W
 
-X = cp.asarray(patch_features_flat.reshape(B*N, C))
+X = np.asarray(patch_features_flat.reshape(B*N, C).cpu())
 pca = PCA(n_components=3, whiten=True)
 pca.fit(X)
 print("X.shape:", X.shape)
@@ -65,14 +65,14 @@ print("X.shape:", X.shape)
 X_pca_flat = pca.transform(X)
 print("X_pca_flat.shape:", X_pca_flat.shape)
 
-X_pca=X_pca_flat.reshape(B, H, W, 3)
+X_pca = X_pca_flat.reshape(B, H, W, 3)
 print("X_pca.shape:", X_pca.shape)
 
-projected_image = 1 / (1 + cp.exp(-2 * X_pca))
+projected_image = 1 / (1 + np.exp(-2 * X_pca))
 
 for i in range(B):
     plt.figure()
-    plt.imshow(projected_image[i].get())
+    plt.imshow(projected_image[i])
     plt.axis('off')
 
 plt.show()
