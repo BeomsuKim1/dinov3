@@ -1,6 +1,7 @@
 import os
 import torch
 import cupy as cp
+import matplotlib.pyplot as plt
 from huggingface_hub import login
 from transformers import AutoImageProcessor, AutoModel
 from transformers.image_utils import load_image
@@ -15,6 +16,10 @@ login(token=token)
 path = "/home/beomsu/Downloads/iStock-1052880600.jpg"
 image = load_image(path)
 print("Image size:", image.height, image.width)
+
+plt.figure()
+plt.imshow(image)
+plt.axis('off')
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Device:", device)
@@ -45,9 +50,9 @@ assert last_hidden_states.shape == (batch_size, 1 + model.config.num_register_to
 
 cls_token = last_hidden_states[:, 0, :]
 patch_features_flat = last_hidden_states[:, 1 + model.config.num_register_tokens:, :]
-print(patch_features_flat.shape)
+print("patch_features_flat.shape:", patch_features_flat.shape)
 patch_features = patch_features_flat.unflatten(1, (num_patches_height, num_patches_width))
-print(patch_features.shape)
+print("patch_features.shape:", patch_features.shape)
 
 B, H, W, C = patch_features.shape
 N = H * W
@@ -55,10 +60,19 @@ N = H * W
 X = cp.asarray(patch_features_flat.reshape(B*N, C))
 pca = PCA(n_components=3, whiten=True)
 pca.fit(X)
-print(X.shape)
+print("X.shape:", X.shape)
 
 X_pca_flat = pca.transform(X)
-print(X_pca_flat.shape)
+print("X_pca_flat.shape:", X_pca_flat.shape)
 
 X_pca=X_pca_flat.reshape(B, H, W, 3)
-print(X_pca.shape)
+print("X_pca.shape:", X_pca.shape)
+
+projected_image = 1 / (1 + cp.exp(-2 * X_pca))
+
+for i in range(B):
+    plt.figure()
+    plt.imshow(projected_image[i].get())
+    plt.axis('off')
+
+plt.show()
